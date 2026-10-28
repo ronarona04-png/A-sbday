@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chess ♚ Happy Birthday Abdullah</title>
+<style>
+:root{--bg:#f6f1e7;--fg:#2b2118;--l:#f0d9b5;--d:#b58863;--sel:#f6e05e;--mv:rgba(30,120,60,.55);--chk:#e5484d;--card:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1814;--fg:#f3ebdd;--l:#a58a64;--d:#6b4f33;--card:#2a241d}}
+:root[data-theme="dark"]{--bg:#1c1814;--fg:#f3ebdd;--l:#a58a64;--d:#6b4f33;--card:#2a241d}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+body{display:flex;flex-direction:column;align-items:center;padding:16px;min-height:100%}
+h1{font-size:1.2rem;margin:4px 0}
+#st{min-height:1.6em;margin:6px 0 10px;font-weight:600;text-align:center}
+#b{direction:ltr;display:grid;grid-template-columns:repeat(8,1fr);width:min(94vw,480px);aspect-ratio:1;border:4px solid var(--d);border-radius:6px;overflow:hidden;user-select:none}
+.s{display:flex;align-items:center;justify-content:center;font-size:min(9.5vw,46px);cursor:pointer;position:relative;line-height:1}
+.s.l{background:var(--l)}.s.d{background:var(--d)}
+.s.sel{background:var(--sel)}.s.last{box-shadow:inset 0 0 0 3px rgba(246,224,94,.8)}
+.s.chk{background:var(--chk)}
+.s.mv::after{content:"";width:28%;height:28%;border-radius:50%;background:var(--mv);position:absolute}
+.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 1px 3px #000}.k{color:#111;text-shadow:0 0 1px rgba(255,255,255,.4)}
+button{margin-top:14px;padding:10px 22px;font-size:1rem;border:0;border-radius:10px;background:var(--d);color:#fff;cursor:pointer}
+#ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:5;padding:20px}
+#ov.on{display:flex}
+#card{background:var(--card);border-radius:18px;padding:28px 22px;text-align:center;max-width:340px;direction:ltr;animation:pop .5s}
+#card h2{font-size:2rem;margin:0 0 6px}#card p{font-size:1.4rem;margin:8px 0}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.c{position:fixed;top:-20px;width:10px;height:14px;z-index:6;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+</style>
+</head>
+<body>
+<h1>♚ One move to win!</h1>
+<div id="st"></div>
+<div id="b"></div>
+<button id="nb">Restart</button>
+<div id="ov"><div id="card"><h2 id="t"></h2><p id="m"></p><button id="ok">Play again</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.js"></script>
+<script>
+const FEN='6k1/5ppp/8/8/8/8/8/R3K3 w - - 0 1',G=new Chess(FEN),B=document.getElementById('b'),ST=document.getElementById('st');
+const P={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'},V={p:100,n:320,b:330,r:500,q:900,k:0};
+let sel=null,targets=[],last=null,busy=false;
+function draw(){
+  B.innerHTML='';
+  const bd=G.board(),chk=G.in_check()?findK(G.turn()):null;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const sq='abcdefgh'[c]+(8-r),p=bd[r][c],e=document.createElement('div');
+    e.className='s '+((r+c)%2?'d':'l')+(sq===sel?' sel':'')+(last&&(sq===last[0]||sq===last[1])?' last':'')+(sq===chk?' chk':'')+(targets.includes(sq)?' mv':'');
+    if(p){const i=document.createElement('span');i.textContent=P[p.type];i.className=p.color==='w'?'w':'k';e.appendChild(i)}
+    e.onclick=()=>click(sq);B.appendChild(e);
+  }
+  ST.textContent=G.in_checkmate()?'':G.in_draw()?'Draw 🤝':'You are White: find the move that gives checkmate ♟';
+}
+function findK(t){const bd=G.board();for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=bd[r][c];if(p&&p.type==='k'&&p.color===t)return'abcdefgh'[c]+(8-r)}}
+function click(sq){
+  if(busy||G.game_over()||G.turn()!=='w')return;
+  if(sel&&targets.includes(sq)){play({from:sel,to:sq,promotion:'q'});return}
+  const p=G.get(sq);
+  if(p&&p.color==='w'){sel=sq;targets=G.moves({square:sq,verbose:true}).map(m=>m.to)}else{sel=null;targets=[]}
+  draw();
+}
+function play(m){
+  const r=G.move(m);last=[r.from,r.to];sel=null;targets=[];
+  if(G.in_checkmate()){draw();return end()}
+  busy=true;draw();ST.textContent='Not that one! Try again 😄';
+  setTimeout(()=>{G.undo();last=null;busy=false;draw()},1200);
+}
+function ev(){
+  let s=0;for(const row of G.board())for(const p of row)if(p)s+=(p.color==='b'?1:-1)*V[p.type];return s;
+}
+function search(d,a,b,max){
+  if(d===0||G.game_over())return G.in_checkmate()?(max?-99999-d:99999+d):G.in_draw()?0:ev();
+  let best=max?-1e9:1e9;
+  for(const m of G.moves()){
+    G.move(m);const v=search(d-1,a,b,!max);G.undo();
+    if(max){best=Math.max(best,v);a=Math.max(a,v)}else{best=Math.min(best,v);b=Math.min(b,v)}
+    if(b<=a)break;
+  }
+  return best;
+}
+function ai(){
+  const ms=G.moves();let bm=null,bv=-1e9;
+  for(const m of ms){
+    G.move(m);const v=search(1,-1e9,1e9,false)+Math.random()*60;G.undo();
+    if(v>bv){bv=v;bm=m}
+  }
+  busy=false;play(bm);
+}
+function end(){
+  if(!G.in_checkmate())return;
+  const win=G.turn()==='b';
+  document.getElementById('t').textContent=win?'Checkmate! ♚':'Checkmate…';
+  document.getElementById('m').textContent=win?'🎉 Happy Birthday Abdullah 🎂':'Computer won. Try again!';
+  document.getElementById('ov').classList.add('on');
+  if(win)confetti();
+}
+function confetti(){
+  const cols=['#e5484d','#f6c945','#3fb950','#4c8dff','#c061ff'];
+  for(let i=0;i<70;i++){const c=document.createElement('div');c.className='c';
+    c.style.left=Math.random()*100+'vw';c.style.background=cols[i%5];
+    c.style.animationDuration=(2+Math.random()*2.5)+'s';c.style.animationDelay=Math.random()*1.2+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),6000)}
+}
+function reset(){G.load(FEN);sel=null;targets=[];last=null;busy=false;document.getElementById('ov').classList.remove('on');draw()}
+document.getElementById('nb').onclick=reset;document.getElementById('ok').onclick=reset;
+draw();
+</script>
+</body>
+</html>
